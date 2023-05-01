@@ -13,6 +13,7 @@ import {
 import { isFractionString } from '../../services/validators';
 import { GamutConfig } from './gamut.config';
 import routerAbi from './gamut_abi.json';
+// import dexModuleAbi from './sdk/abis/DEXModule.json';
 import {
   Token,
   Percent,
@@ -22,7 +23,7 @@ import {
   Fetcher as SdkFetcher,
   Pair as SdkPair
 } from "./sdk";
-import { ChainId, defaultTokenList, ROUTER, ROUTER_ADDRESS } from "./sdk/constants";
+import { ChainId, defaultTokenList, DEX_MODULE_ADDRESS, ROUTER, ROUTER_ADDRESS } from "./sdk/constants";
 import { logger } from '../../services/logger';
 import { Kava } from '../../chains/kava/kava';
 import { ExpectedTrade, Uniswapish } from '../../services/common-interfaces';
@@ -45,6 +46,7 @@ export class Gamut implements Uniswapish {
     this.chainId = this.kava.chainId;
     this._router = config.routerAddress(network);
     this._ttl = config.ttl;
+    // this._routerAbi = dexModuleAbi;
     this._routerAbi = routerAbi;
     this._gasLimitEstimate = config.gasLimitEstimate;
   }
@@ -307,6 +309,7 @@ export class Gamut implements Uniswapish {
       allowedSlippage: this.getAllowedSlippage(allowedSlippage),
     });
 
+    // const contract = new Contract(DEX_MODULE_ADDRESS, abi, wallet);
     const contract = new Contract(ROUTER_ADDRESS, abi, wallet);
 
     return this.kava.nonceManager.provideNonce(
