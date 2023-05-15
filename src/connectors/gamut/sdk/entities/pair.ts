@@ -3,13 +3,13 @@ import { Price } from './fractions/price'
 import { TokenAmount } from './fractions/tokenAmount'
 import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
-import { pack, keccak256 } from '@ethersproject/solidity'
-import { getCreate2Address } from '@ethersproject/address'
+// import { pack, keccak256 } from '@ethersproject/solidity'
+// import { getCreate2Address } from '@ethersproject/address'
 
 import {
   BigintIsh,
-  FACTORY_ADDRESS_MAP,
-  INIT_CODE_HASH_MAP,
+  // FACTORY_ADDRESS_MAP,
+  // INIT_CODE_HASH_MAP,
   MINIMUM_LIQUIDITY,
   ZERO,
   ONE,
@@ -17,53 +17,38 @@ import {
   FEES_NUMERATOR,
   FEES_DENOMINATOR,
   ChainId,
-
+  AddressPoolMap 
 } from '../constants'
-import HedgeFactoryAbi from "../abis/HedgeFactory.json";
+// import HedgeFactoryAbi from "../abis/HedgeFactory.json";
 import { sqrt, parseBigintIsh } from '../utils'
 import { InsufficientReservesError, InsufficientInputAmountError } from '../errors'
 import { Token } from './token'
-import { ethers } from 'ethers'
-import { BaseProvider } from '@ethersproject/providers'
+// import { ethers } from 'ethers'
+// import { BaseProvider } from '@ethersproject/providers'
 
-let PAIR_ADDRESS_CACHE: { [key: string]: string } = {}
+// let PAIR_ADDRESS_CACHE: { [key: string]: string } = {}
 
-const composeKey = (token0: Token, token1: Token) => `${token0.chainId}-${token0.address}-${token1.address}`
+const composeKey = (token0: Token, token1: Token) => `${token0.address}-${token1.address}`
 
 export class Pair {
   public readonly liquidityToken: Token
   private readonly tokenAmounts: [TokenAmount, TokenAmount]
 
-  public static async getPoolAddress(provider: BaseProvider, tokenA: string, tokenB: string): Promise<string> {
-    // TODO 
-    const chainId = 2222; //provider.getChainId()
-    const hedgeFactory = FACTORY_ADDRESS_MAP[chainId];
-    const contract = new ethers.Contract(hedgeFactory, HedgeFactoryAbi, provider);
-    const pairAddr: string = await contract.getPool(tokenA, tokenB);
-    return pairAddr;
-
-  }
+  // public static async getPoolAddress(provider: BaseProvider, tokenA: string, tokenB: string): Promise<string> {
+  //   const chainId = 2222;
+  //   const hedgeFactory = FACTORY_ADDRESS_MAP[chainId];
+  //   const contract = new ethers.Contract(hedgeFactory, HedgeFactoryAbi, provider);
+  //   const pairAddr: string = await contract.getPool(tokenA, tokenB);
+  //   return pairAddr;
+  // }
 
   public static getAddress(tokenA: Token, tokenB: Token): string {
     const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
-
-    const key = composeKey(token0, token1)
-
-    if (PAIR_ADDRESS_CACHE?.[key] === undefined) {
-      PAIR_ADDRESS_CACHE = {
-        ...PAIR_ADDRESS_CACHE,
-        [key]: getCreate2Address(
-          FACTORY_ADDRESS_MAP[token0.chainId],
-          keccak256(['bytes'], [pack(['address', 'address'], [token0.address, token1.address])]),
-          INIT_CODE_HASH_MAP[token0.chainId]
-        )
-      }
-    }
-
-    return PAIR_ADDRESS_CACHE[key]
+    const key: string = composeKey(token0, token1)
+    return AddressPoolMap[key as keyof typeof AddressPoolMap];
   }
 
-  public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount) {
+  public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount, ) {
     const tokenAmounts = tokenAmountA.token.sortsBefore(tokenAmountB.token) // does safety checks
       ? [tokenAmountA, tokenAmountB]
       : [tokenAmountB, tokenAmountA]
@@ -71,8 +56,8 @@ export class Pair {
       tokenAmounts[0].token.chainId,
       Pair.getAddress(tokenAmounts[0].token, tokenAmounts[1].token),
       18,
-      'Cake-LP',
-      'Pancake LPs'
+      'Gamut-LP',
+      'Gamut LPs'
     )
     this.tokenAmounts = tokenAmounts as [TokenAmount, TokenAmount]
   }

@@ -28,8 +28,22 @@ export const defaultTokenList = {
 		{ value: "kava", chainId: 2222, address: "0x0000000000000000000000000000000000000000", symbol: "KAVA", name: "KAVA Coin", decimals: 18, logoURL: "https://assets-cdn.trustwallet.com/blockchains/kava/info/logo.png", tags: ["Coin"] },
 		{ value: "busd", chainId: 2222, address: "0x332730a4F6E03D9C55829435f10360E13cfA41Ff", symbol: "BUSD", name: "BUSD Coin", decimals: 18, logoURL: "https://cryptologos.cc/logos/binance-usd-busd-logo.png", tags: ["stablecoin"] },
 		{ value: "wkava", chainId: 2222, address: "0xc86c7C0eFbd6A49B35E8714C5f59D99De09A225b", symbol: "WKAVA", name: "Wrapped KAVA", decimals: 18, logoURL: "https://assets-cdn.trustwallet.com/blockchains/kava/info/logo.png", tags: ["Coin"] },
+		{ value: "usdc", chainId: 2222, address: "0xfa9343c3897324496a05fc75abed6bac29f8a40f", symbol: "USDC", name: "USD Coin", decimals: 6, logoURL: "https://assets-cdn.trustwallet.com/blockchains/kava/info/logo.png", tags: ["stablecoin"] },
 	]
 }
+
+export let AddressPoolMap = {
+    "0x332730a4F6E03D9C55829435f10360E13cfA41Ff-0xc86c7C0eFbd6A49B35E8714C5f59D99De09A225b": "0x6be57618c8832ad25cceadf2745d5c92de7ab7b2",
+    "0x765277EebeCA2e31912C9946eAe1021199B39C61-0xB44a9B6905aF7c801311e8F4E76932ee959c663C": "0x02Bd2e7f107A15CE8b6414df67F4A7e662218Bc9",
+    "0x765277EebeCA2e31912C9946eAe1021199B39C61-0x818ec0A7Fe18Ff94269904fCED6AE3DaE6d6dC0b": "0xbd3d481e308A6f2fA6714bA3dc33e68Ab3915557",
+    "0x765277EebeCA2e31912C9946eAe1021199B39C61-0xfA9343C3897324496A05fC75abeD6bAC29f8A40f": "0x9f065518185436FbDd72FD7ca7fd99CCAF3f061A",
+    "0x332730a4F6E03D9C55829435f10360E13cfA41Ff-0x765277EebeCA2e31912C9946eAe1021199B39C61": "0x9D102cE615ab35CEdDDa899bE47A8DA5Dc139460",
+    "0x765277EebeCA2e31912C9946eAe1021199B39C61-0xc86c7C0eFbd6A49B35E8714C5f59D99De09A225b": "0x1e34dd2F920630e6AF04519221ed9004608A6c52",
+    "0xB44a9B6905aF7c801311e8F4E76932ee959c663C-0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D": "0xBd87cD1512763EEFC14B3717ff42538022E95C95",
+    "0xc86c7C0eFbd6A49B35E8714C5f59D99De09A225b-0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D": "0x545236b930E5F5f339934296A5d442014978706F"
+}
+
+
 
 export const poolList = {
 	'kava': [
@@ -44,9 +58,11 @@ export const poolList = {
 	]
 }
 
-
-
+export const WKAVA  = "0xc86c7C0eFbd6A49B35E8714C5f59D99De09A225b"
+export const ROUTER_ADDRESS = "0x923A7273480e73439b73b065d096c58034968504"
 export const FACTORY_ADDRESS = '0xbD4C56E952c238389AEE995E1ed504cA646D199B'
+// TODO: Change after deployment
+export const SAFE_MODULE_ADDRESS = "0xCD190535a065ba9223FC2E330d4BECDb0C08E828"
 
 export const FACTORY_ADDRESS_MAP = {
   [ChainId.MAINNET]: FACTORY_ADDRESS,

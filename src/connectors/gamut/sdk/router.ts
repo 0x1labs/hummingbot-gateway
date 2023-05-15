@@ -1,6 +1,5 @@
-import { TradeType } from './constants'
 import invariant from 'tiny-invariant'
-import { validateAndParseAddress } from './utils'
+// import { validateAndParseAddress } from './utils'
 import { CurrencyAmount, ETHER, Percent, Trade } from './entities'
 
 /**
@@ -67,7 +66,7 @@ export abstract class Router {
   /**
    * Cannot be constructed.
    */
-  private constructor() {}
+  private constructor() { }
   /**
    * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
    * @param trade to produce call parameters for
@@ -80,61 +79,50 @@ export abstract class Router {
     invariant(!(etherIn && etherOut), 'ETHER_IN_OUT')
     invariant(!('ttl' in options) || options.ttl > 0, 'TTL')
 
-    const to: string = validateAndParseAddress(options.recipient)
+    // const to: string = validateAndParseAddress(options.recipient)
     const amountIn: string = toHex(trade.maximumAmountIn(options.allowedSlippage))
-    const amountOut: string = toHex(trade.minimumAmountOut(options.allowedSlippage))
+
+    let methodName: string = ""
+    let args: any = [""];
+    let value: string = ZERO_HEX;
     const path: string[] = trade.route.path.map((token) => token.address)
-    const deadline =
+    const deadlineSec =
       'ttl' in options
         ? `0x${(Math.floor(new Date().getTime() / 1000) + options.ttl).toString(16)}`
         : `0x${options.deadline.toString(16)}`
+    const deadline = String(Number(deadlineSec) * 1000);
+    const pathlen = path.length
 
-    const useFeeOnTransfer = Boolean(options.feeOnTransfer)
+    if (pathlen === 2) {
+      methodName = "safeSwap"
+      args = [
+        [path[0], path[1], amountIn],
+        ZERO_HEX,
+        deadline
+      ]
+      value = ZERO_HEX;
+    } else if (pathlen > 2) {
+      methodName = "safeSwapBatch"
+      let swapsParam = [];
 
-    let methodName: string
-    let args: (string | string[])[]
-    let value: string
-    switch (trade.tradeType) {
-      case TradeType.EXACT_INPUT:
-        if (etherIn) {
-          methodName = useFeeOnTransfer ? 'swapExactETHForTokensSupportingFeeOnTransferTokens' : 'swapExactETHForTokens'
-          // (uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountOut, path, to, deadline]
-          value = amountIn
-        } else if (etherOut) {
-          methodName = useFeeOnTransfer ? 'swapExactTokensForETHSupportingFeeOnTransferTokens' : 'swapExactTokensForETH'
-          // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountIn, amountOut, path, to, deadline]
-          value = ZERO_HEX
+      for (let index = 0; index < pathlen; index++) {
+        if (index == 0) {
+          swapsParam.push([String(index), String(index + 1), amountIn])
         } else {
-          methodName = useFeeOnTransfer
-            ? 'swapExactTokensForTokensSupportingFeeOnTransferTokens'
-            : 'swapExactTokensForTokens'
-          // (uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-          args = [amountIn, amountOut, path, to, deadline]
-          value = ZERO_HEX
+          swapsParam.push([String(index), String(index + 1), ZERO_HEX])
         }
-        break
-      case TradeType.EXACT_OUTPUT:
-        invariant(!useFeeOnTransfer, 'EXACT_OUT_FOT')
-        if (etherIn) {
-          methodName = 'swapETHForExactTokens'
-          // (uint amountOut, address[] calldata path, address to, uint deadline)
-          args = [amountOut, path, to, deadline]
-          value = amountIn
-        } else if (etherOut) {
-          methodName = 'swapTokensForExactETH'
-          // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-          args = [amountOut, amountIn, path, to, deadline]
-          value = ZERO_HEX
-        } else {
-          methodName = 'swapTokensForExactTokens'
-          // (uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-          args = [amountOut, amountIn, path, to, deadline]
-          value = ZERO_HEX
-        }
-        break
+      }
+      args = [
+        swapsParam,
+        path,
+        new Array<string>(pathlen).fill(ZERO_HEX),
+        deadline
+      ]
+      value = ZERO_HEX;
+    } else {
+      throw new Error(`Path of length ${pathlen} obtained`)
     }
+
     return {
       methodName,
       args,

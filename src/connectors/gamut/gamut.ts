@@ -12,20 +12,17 @@ import {
 } from 'ethers';
 import { isFractionString } from '../../services/validators';
 import { GamutConfig } from './gamut.config';
-import routerAbi from './gamut_abi.json';
+import routerAbi from './safe_module_abi.json';
 import {
   Token,
   Percent,
   TokenAmount,
-  Trade,
+  Trade as SdkTrade,
   Router,
-  Fetcher,
-  Pair
-} from '@pangolindex/sdk';
-import { Pair as SdkPair } from "./sdk/entities/pair";
-import { Token as SdkToken } from "./sdk/entities/token"
-import { Fetcher as SdkFetcher } from "./sdk/fetcher";
-import { ChainId, defaultTokenList } from "./sdk/constants";
+  Fetcher as SdkFetcher,
+  Pair as SdkPair 
+} from "./sdk";
+import { ChainId, defaultTokenList, ROUTER, ROUTER_ADDRESS, SAFE_MODULE_ADDRESS } from "./sdk/constants";
 import { logger } from '../../services/logger';
 import { Kava } from '../../chains/kava/kava';
 import { ExpectedTrade, Uniswapish } from '../../services/common-interfaces';
@@ -165,7 +162,7 @@ export class Gamut implements Uniswapish {
       `Fetching pair data for ${baseToken.address}-${quoteToken.address}.`
     );
 
-    let baseTokenDetails: SdkToken = await SdkFetcher.fetchTokenData(
+    let baseTokenDetails: Token = await SdkFetcher.fetchTokenData(
       baseToken.chainId,
       baseToken.address,
       this.kava.provider,
@@ -174,7 +171,7 @@ export class Gamut implements Uniswapish {
     )
 
 
-    let quoteTokenDetails: SdkToken = await SdkFetcher.fetchTokenData(
+    let quoteTokenDetails: Token = await SdkFetcher.fetchTokenData(
       quoteToken.chainId,
       quoteToken.address,
       this.kava.provider,
@@ -188,13 +185,13 @@ export class Gamut implements Uniswapish {
       this.kava.provider
     )
 
-
-    const trades: Trade[] = Trade.bestTradeExactIn(
+    const trades: Trade[] = SdkTrade.bestTradeExactIn(
       [pair as Pair],
       nativeTokenAmount,
       quoteToken,
       { maxHops: 1 }
     );
+
     if (!trades || trades.length === 0) {
       throw new UniswapishPriceError(
         `priceSwapIn: no trade pair found for ${baseToken} to ${quoteToken}.`
@@ -232,13 +229,34 @@ export class Gamut implements Uniswapish {
     logger.info(
       `Fetching pair data for ${quoteToken.address}-${baseToken.address}.`
     );
-    const pair: Pair = await Fetcher.fetchPairData(
-      quoteToken,
-      baseToken,
+
+    let baseTokenDetails: Token = await SdkFetcher.fetchTokenData(
+      baseToken.chainId,
+      baseToken.address,
+      this.kava.provider,
+      baseToken.symbol,
+      baseToken.name
+    )
+
+
+    let quoteTokenDetails: Token = await SdkFetcher.fetchTokenData(
+      quoteToken.chainId,
+      quoteToken.address,
+      this.kava.provider,
+      quoteToken.symbol,
+      quoteToken.name
+    )
+
+    const pair: SdkPair = await SdkFetcher.fetchPairData(
+      baseTokenDetails,
+      quoteTokenDetails,
       this.kava.provider
-    );
-    const trades: Trade[] = Trade.bestTradeExactOut(
-      [pair],
+    )
+
+    console.log(JSON.stringify(pair))
+
+    const trades: SdkTrade[] = SdkTrade.bestTradeExactOut(
+      [pair as Pair],
       quoteToken,
       nativeTokenAmount,
       { maxHops: 1 }
@@ -264,9 +282,9 @@ export class Gamut implements Uniswapish {
    * @param wallet Wallet
    * @param trade Expected trade
    * @param gasPrice Base gas price, for pre-EIP1559 transactions
-   * @param pangolinRouter smart contract address
+   * @param safeModule .... gnosis safe module fo gamut
    * @param ttl How long the swap is valid before expiry, in seconds
-   * @param abi Router contract ABI
+   * @param abi ... safe module abi
    * @param gasLimit Gas limit
    * @param nonce (Optional) EVM transaction nonce
    * @param maxFeePerGas (Optional) Maximum total fee per gas you want to pay
@@ -276,7 +294,7 @@ export class Gamut implements Uniswapish {
     wallet: Wallet,
     trade: Trade,
     gasPrice: number,
-    pangolinRouter: string,
+    safeModule: string,
     ttl: number,
     abi: ContractInterface,
     gasLimit: number,
@@ -291,7 +309,8 @@ export class Gamut implements Uniswapish {
       allowedSlippage: this.getAllowedSlippage(allowedSlippage),
     });
 
-    const contract = new Contract(pangolinRouter, abi, wallet);
+    const contract = new Contract(SAFE_MODULE_ADDRESS, abi, wallet);
+
     return this.kava.nonceManager.provideNonce(
       nonce,
       wallet.address,
